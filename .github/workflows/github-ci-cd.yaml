@@ -1,0 +1,32 @@
+name: CI/CD with Gradle/Docker
+
+on:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+jobs:
+  build:
+    uses: mehmetmgrsl/github-common-workflows/.github/workflows/gradle-build.yml@main
+    with:
+      java-version: '11'
+      artifact-name: my-artifact
+      artifact-path: my-artifact-path
+  semver:
+    needs: build
+    uses: mehmetmgrsl/github-common-workflows/.github/workflows/semver.yml@main
+    with:
+      sem_ver_increment: ${{ vars.SEM_VER_INCREMENT }}
+    secrets:
+      docker_pat: ${{ secrets.DOCKER_PAT }} 
+
+  publish:
+    needs: [build, semver]
+    uses: mehmetmgrsl/github-common-workflows/.github/workflows/publish.yml@main
+    with:
+      version: ${{ needs.semver.outputs.version }}
+      artifact-name: my-artifact
+      artifact-path: my-artifact-path
+    secrets:
+      docker_pat: ${{ secrets.DOCKER_PAT }}
